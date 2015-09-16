@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/charlesliu/anaconda/lib/python2.7/site-packages/spyderlib/spyder.py", line 2367, in main
+    mainwindow = run_spyder(app, options, args)
+  File "/Users/charlesliu/anaconda/lib/python2.7/site-packages/spyderlib/spyder.py", line 2255, in run_spyder
+    main.setup()
+  File "/Users/charlesliu/anaconda/lib/python2.7/site-packages/spyderlib/spyder.py", line 801, in setup
+    from spyderlib.plugins.inspector import ObjectInspector
+  File "/Users/charlesliu/anaconda/lib/python2.7/site-packages/spyderlib/plugins/inspector.py", line 41, in <module>
+    from spyderlib.widgets.ipython import IPythonControlWidget
+  File "/Users/charlesliu/anaconda/lib/python2.7/site-packages/spyderlib/widgets/ipython.py", line 27, in <module>
+    pygments_patch.apply()
+  File "/Users/charlesliu/anaconda/lib/python2.7/site-packages/spyderlib/pygments_patch.py", line 27, in apply
+    from IPython.frontend.qt.console.pygments_highlighter import RegexLexer
+ImportError: No module named pygments_highlighter

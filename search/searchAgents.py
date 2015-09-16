@@ -251,6 +251,12 @@ def euclideanHeuristic(position, problem, info={}):
     xy1 = position
     xy2 = problem.goal
     return ( (xy1[0] - xy2[0]) ** 2 + (xy1[1] - xy2[1]) ** 2 ) ** 0.5
+    
+def manhattanDistance(xy1, xy2):
+    return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
+    
+def euclideanDistance(xy1, xy2):
+    return ( (xy1[0] - xy2[0]) ** 2 + (xy1[1] - xy2[1]) ** 2 ) ** 0.5
 
 #####################################################
 # This portion is incomplete.  Time to write code!  #
@@ -281,12 +287,17 @@ class CornersProblem(search.SearchProblem):
     def getStartState(self):
         "Returns the start state (in your state space, not the full Pacman state space)"
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return (self.startingPosition, [])
+        
+    def addCorner(self, state):
+        if state[0] in self.corners and not state[0] in state[1]:
+            state[1].append(state[0])
 
     def isGoalState(self, state):
         "Returns whether this search state is a goal state of the problem"
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.addCorner(state)
+        return len(state[1]) == 4 and state[0] in state[1]
 
     def getSuccessors(self, state):
         """
@@ -310,6 +321,14 @@ class CornersProblem(search.SearchProblem):
             #   hitsWall = self.walls[nextx][nexty]
 
             "*** YOUR CODE HERE ***"
+            x,y = state[0]
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x+dx), int(y+dy)
+            hitsWall = self.walls[nextx][nexty]
+            if not hitsWall:
+                state_next = ((nextx, nexty), state[1][:])
+                self.addCorner(state_next)
+                successors.append((state_next, action, 1))                
 
         self._expanded += 1
         return successors
@@ -327,6 +346,30 @@ class CornersProblem(search.SearchProblem):
             if self.walls[x][y]: return 999999
         return len(actions)
 
+def greedyHeuristic(unvisited, location, distance_function=manhattanDistance):
+    total_distance = 0
+    while (len(unvisited) > 0):
+        min_index = 0
+        min_distance = distance_function(unvisited[min_index], location)
+        for i in range(len(unvisited)):
+            distance = distance_function(unvisited[i], location)
+            if distance < min_distance:
+                min_index = i
+                min_distance = distance
+
+        total_distance += min_distance
+        location = unvisited[min_index]
+        del unvisited[min_index]
+        
+    return total_distance
+
+def oneDeepGreedyHeuristic(unvisited, location, distance_function=manhattanDistance):
+    min_distance = 999999 if len(unvisited) > 0 else 0
+    for i in range(len(unvisited)):
+        distance = manhattanDistance(unvisited[i], location) + greedyHeuristic(unvisited[:i] + unvisited[i+1:], unvisited[i], distance_function)
+        if min_distance > distance:
+            min_distance = distance
+    return min_distance
 
 def cornersHeuristic(state, problem):
     """
@@ -342,10 +385,18 @@ def cornersHeuristic(state, problem):
     it should be admissible (as well as consistent).
     """
     corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+    #walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    #return 0 # Default to trivial solution
+    unvisited = []
+    for corner in corners:
+        if not corner in state[1]:
+            unvisited.append(corner)
+    location = state[0]
+    
+    return oneDeepGreedyHeuristic(unvisited, location)
+    
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -436,7 +487,12 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    food_points = []
+    for i in range(foodGrid.width):
+        for j in range(foodGrid.height):
+            if foodGrid[i][j] == True:
+                food_points.append((i,j))
+    return oneDeepGreedyHeuristic(food_points, position)
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -464,7 +520,7 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return search.uniformCostSearch(problem)
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -500,7 +556,7 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.food[x][y]
 
 ##################
 # Mini-contest 1 #
