@@ -50,7 +50,16 @@ class ReflexAgent(Agent):
         "Add more of your code here if you want to"
 
         return legalMoves[chosenIndex]
-
+        
+    #if distance is only 2 check for a wall between
+    def blocked_by_wall(self, xy1, xy2, walls):
+        if xy1[0] == xy2[0]:
+            return walls[xy1[0]][xy1[1] + 1 if xy1[1] < xy2[1] else xy1[1] - 1]
+        elif xy1[1] == xy2[1]:
+            return walls[xy1[0] + 1 if xy1[0] < xy2[0] else xy1[0] - 1][xy1[1]]
+        else:
+            return False
+    
     def evaluationFunction(self, currentGameState, action):
         """
         Design a better evaluation function here.
@@ -72,9 +81,49 @@ class ReflexAgent(Agent):
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
-
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        capsule_worth = 15
+        food_worth = 5
+        ghost_tolerance = 5
+        walls = successorGameState.getWalls()        
+        score = successorGameState.getScore() - currentGameState.getScore()
+        score *= 10
+        min_distance_food = newFood.width + newFood.height
+        min_distance_capsule = min_distance_food
+        new_capsules = successorGameState.getCapsules()
+        old_capsules = currentGameState.getCapsules()   
+        capsule_bonus = min_distance_food*capsule_worth*(len(old_capsules) - len(new_capsules))
+        
+        #go for the nearest capsule
+        for capsule in new_capsules:
+            dist = manhattanDistance(capsule, newPos)
+            if dist < min_distance_capsule:
+                if dist != 2 or not self.blocked_by_wall(capsule, newPos, walls):
+                    min_distance_capsule = dist
+        
+        #go to nearest food taking into account walls for manhattanDistance
+        for x in range(0, newFood.width):
+            for y in range(0, newFood.height):
+                if newFood[x][y]:
+                    dist = manhattanDistance((x,y), newPos)
+                    if dist < min_distance_food:
+                        if not self.blocked_by_wall((x,y), newPos, walls):
+                            min_distance_food = dist
+        
+        #check for ghosts nearby and reduce score based on manhattanDistance
+        for i in range(0, len(newGhostStates)):
+            ghost_coords = newGhostStates[i].getPosition()
+            distance = manhattanDistance(ghost_coords, newPos)
+            if distance < ghost_tolerance and newScaredTimes[i] == 0:
+                score -= (ghost_tolerance - distance)*capsule_worth
+
+        #make sure min_distances are not the starting numbers
+        if min_distance_food == newFood.width + newFood.height:
+            min_distance_food = -1
+        if min_distance_capsule == newFood.width + newFood.height:
+            min_distance_capsule = -1
+        
+        return score - min_distance_food*food_worth - min_distance_capsule*capsule_worth + capsule_bonus
 
 def scoreEvaluationFunction(currentGameState):
     """
