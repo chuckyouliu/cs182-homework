@@ -221,7 +221,46 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.pacman_helper(self.evaluationFunction, self.depth, gameState, -float("inf"), float("inf"))["action"]
+    
+    def pacman_helper(self, evalFn, depth, gameState, alpha, beta):
+        if depth == 0 or gameState.isWin() or gameState.isLose():
+            return {"score": evalFn(gameState), "action": Directions.STOP}
+        else:
+            pac_actions = gameState.getLegalActions(0)
+            move = {"score": -float("inf"), "move": None}
+            for action in pac_actions:
+                score = self.ghost_helper(evalFn, depth, gameState.generateSuccessor(0, action), 1, alpha, beta)
+                if score > move["score"]:
+                    move = {"score": score,
+                            "action": action}
+                    if score > beta:
+                        return move
+                    alpha = max(alpha, move["score"])
+                    
+            return move
+    
+    def ghost_helper(self, evalFn, depth, gameState, ghost_index, alpha, beta):
+        if depth == 0 or gameState.isWin() or gameState.isLose():
+            return evalFn(gameState)
+        else:
+            ghost_actions = gameState.getLegalActions(ghost_index)
+            if ghost_index < gameState.getNumAgents() - 1:
+                score = float("inf")               
+                for action in ghost_actions:
+                    score = min(self.ghost_helper(evalFn, depth, gameState.generateSuccessor(ghost_index, action), ghost_index+1, alpha, beta), score)
+                    if score < alpha:
+                        return score
+                    beta = min(beta, score)
+                return score   
+            else:
+                score = float("inf")             
+                for action in ghost_actions:
+                    score = min(score, self.pacman_helper(evalFn, depth-1, gameState.generateSuccessor(ghost_index, action), alpha, beta)["score"])
+                    if score < alpha:
+                        return score
+                    beta = min(beta, score)
+                return score
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
