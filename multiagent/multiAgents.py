@@ -275,7 +275,37 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.pacman_helper(self.evaluationFunction, self.depth, gameState)["action"]
+    
+    def pacman_helper(self, evalFn, depth, gameState):
+        if depth == 0 or gameState.isWin() or gameState.isLose():
+            return {"score": evalFn(gameState), "action": Directions.STOP}
+        else:
+            pac_actions = gameState.getLegalActions(0)
+            move = {"score": self.ghost_helper(evalFn, depth, gameState.generateSuccessor(0, pac_actions[0]), 1),
+                    "action": pac_actions[0]}
+            for i in range(1, len(pac_actions)):
+                score = self.ghost_helper(evalFn, depth, gameState.generateSuccessor(0, pac_actions[i]), 1)
+                if score > move["score"]:
+                    move = {"score": score,
+                            "action": pac_actions[i]}
+            return move
+    
+    def ghost_helper(self, evalFn, depth, gameState, ghost_index):
+        if depth == 0 or gameState.isWin() or gameState.isLose():
+            return evalFn(gameState)
+        else:
+            ghost_actions = gameState.getLegalActions(ghost_index)
+            if ghost_index < gameState.getNumAgents() - 1:
+                score = 0.
+                for action in ghost_actions:
+                    score += self.ghost_helper(evalFn, depth, gameState.generateSuccessor(ghost_index, action), ghost_index+1)
+                return score/len(ghost_actions)
+            else:
+                score = 0.
+                for action in ghost_actions:
+                    score += self.pacman_helper(evalFn, depth-1, gameState.generateSuccessor(ghost_index, action))["score"]
+                return score/len(ghost_actions)
 
 def betterEvaluationFunction(currentGameState):
     """
