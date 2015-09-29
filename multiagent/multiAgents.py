@@ -177,8 +177,39 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.getNumAgents():
             Returns the total number of agents in the game
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        "*** YOUR CODE HERE ***"  
+        return self.pacman_helper(self.evaluationFunction, self.depth, gameState)["action"]
+    
+    def pacman_helper(self, evalFn, depth, gameState):
+        if depth == 0 or gameState.isWin() or gameState.isLose():
+            return {"score": evalFn(gameState), "action": Directions.STOP}
+        else:
+            pac_actions = gameState.getLegalActions(0)
+            move = {"score": self.ghost_helper(evalFn, depth, gameState.generateSuccessor(0, pac_actions[0]), 1),
+                    "action": pac_actions[0]}
+            for i in range(1, len(pac_actions)):
+                score = self.ghost_helper(evalFn, depth, gameState.generateSuccessor(0, pac_actions[i]), 1)
+                if score > move["score"]:
+                    move = {"score": score,
+                            "action": pac_actions[i]}
+            return move
+    
+    def ghost_helper(self, evalFn, depth, gameState, ghost_index):
+        if depth == 0 or gameState.isWin() or gameState.isLose():
+            return evalFn(gameState)
+        else:
+            ghost_actions = gameState.getLegalActions(ghost_index)
+            if ghost_index < gameState.getNumAgents() - 1:
+                score = self.ghost_helper(evalFn, depth, gameState.generateSuccessor(ghost_index, ghost_actions[0]), ghost_index+1)          
+                for action_index in range(1, len(ghost_actions)):
+                    score = min(self.ghost_helper(evalFn, depth, gameState.generateSuccessor(ghost_index, ghost_actions[action_index]), ghost_index+1), score)
+                return score   
+            else:
+                score = self.pacman_helper(evalFn, depth-1, gameState.generateSuccessor(ghost_index, ghost_actions[0]))["score"]
+                for action_index in range(1, len(ghost_actions)):
+                    score = min(score, self.pacman_helper(evalFn, depth-1, gameState.generateSuccessor(ghost_index, ghost_actions[action_index]))["score"])
+                return score
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
