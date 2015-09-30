@@ -50,15 +50,6 @@ class ReflexAgent(Agent):
         "Add more of your code here if you want to"
 
         return legalMoves[chosenIndex]
-        
-    #if distance is only 2 check for a wall between
-    def blocked_by_wall(self, xy1, xy2, walls):
-        if xy1[0] == xy2[0]:
-            return walls[xy1[0]][xy1[1] + 1 if xy1[1] < xy2[1] else xy1[1] - 1]
-        elif xy1[1] == xy2[1]:
-            return walls[xy1[0] + 1 if xy1[0] < xy2[0] else xy1[0] - 1][xy1[1]]
-        else:
-            return False
     
     def evaluationFunction(self, currentGameState, action):
         """
@@ -98,7 +89,7 @@ class ReflexAgent(Agent):
         for capsule in new_capsules:
             dist = manhattanDistance(capsule, newPos)
             if dist < min_distance_capsule:
-                if dist != 2 or not self.blocked_by_wall(capsule, newPos, walls):
+                if dist != 2 or not blocked_by_wall(capsule, newPos, walls):
                     min_distance_capsule = dist
         
         #go to nearest food taking into account walls for manhattanDistance
@@ -107,7 +98,7 @@ class ReflexAgent(Agent):
                 if newFood[x][y]:
                     dist = manhattanDistance((x,y), newPos)
                     if dist < min_distance_food:
-                        if not self.blocked_by_wall((x,y), newPos, walls):
+                        if not blocked_by_wall((x,y), newPos, walls):
                             min_distance_food = dist
         
         #check for ghosts nearby and reduce score based on manhattanDistance
@@ -286,7 +277,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
                     "action": pac_actions[0]}
             for i in range(1, len(pac_actions)):
                 score = self.ghost_helper(evalFn, depth, gameState.generateSuccessor(0, pac_actions[i]), 1)
-                if score > move["score"]:
+                if score > move["score"] or (score == move["score"] and move["action"] == Directions.STOP):
                     move = {"score": score,
                             "action": pac_actions[i]}
             return move
@@ -306,16 +297,53 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
                 for action in ghost_actions:
                     score += self.pacman_helper(evalFn, depth-1, gameState.generateSuccessor(ghost_index, action))["score"]
                 return score/len(ghost_actions)
-
+#if distance is only 2 check for a wall between
+def blocked_by_wall(xy1, xy2, walls):
+    if xy1[0] == xy2[0]:
+        return walls[xy1[0]][xy1[1] + 1 if xy1[1] < xy2[1] else xy1[1] - 1]
+    elif xy1[1] == xy2[1]:
+        return walls[xy1[0] + 1 if xy1[0] < xy2[0] else xy1[0] - 1][xy1[1]]
+    else:
+        return False
+            
 def betterEvaluationFunction(currentGameState):
     """
       Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
       evaluation function (question 5).
 
-      DESCRIPTION: <write something here so we know what you did>
+      DESCRIPTION: hello
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    score = currentGameState.getScore()
+    walls = currentGameState.getWalls()
+    pos = currentGameState.getPacmanPosition()
+    food_grid = currentGameState.getFood()
+    food_worth = 10.
+    capsule_grid = currentGameState.getCapsules()   
+    capsule_worth = 1000.
+    ghost_worth = 5
+    max_dist = food_grid.width + food_grid.height
+    min_food_distance = max_dist
+    ghost_states = currentGameState.getGhostStates()
+    scared_times = [ghostState.scaredTimer for ghostState in ghost_states]
+    for i in range(0, food_grid.width):
+        for j in range(0, food_grid.height):
+            if food_grid[i][j] and not blocked_by_wall(pos, (i,j), walls):
+                min_food_distance = min(manhattanDistance(pos, (i,j)),min_food_distance)
+    for capsule in capsule_grid:
+        score -= capsule_worth
+    for i in range(0, len(ghost_states)):
+        ghost_coords = ghost_states[i].getPosition()
+        ghost_coords = (int(ghost_coords[0]), int(ghost_coords[1]))
+        distance = manhattanDistance(ghost_coords, pos)
+        if distance < scared_times[i]:
+            if blocked_by_wall(ghost_coords, pos, walls):
+                score -= distance*2*ghost_worth
+            else:
+                score -= distance*ghost_worth
+    
+    return score - food_worth*min_food_distance/max_dist
+    
 
 # Abbreviation
 better = betterEvaluationFunction
