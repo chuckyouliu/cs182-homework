@@ -277,7 +277,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
                     "action": pac_actions[0]}
             for i in range(1, len(pac_actions)):
                 score = self.ghost_helper(evalFn, depth, gameState.generateSuccessor(0, pac_actions[i]), 1)
-                if score > move["score"] or (score == move["score"] and move["action"] == Directions.STOP):
+                if score > move["score"]:
                     move = {"score": score,
                             "action": pac_actions[i]}
             return move
