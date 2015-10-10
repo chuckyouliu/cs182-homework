@@ -81,21 +81,32 @@ class Sudoku:
         Returns the first variable with assignment epsilon
         i.e. first square in the board that is unassigned.
         """
-        raise NotImplementedError()
+        for row in range(0, len(self.board)):
+            for col in range(0, len(self.board[row])):
+                if self.board[row][col] == 0:
+                    return (row, col)
+        return None
 
     def complete(self):
         """
         IMPLEMENT FOR PART 1
         Returns true if the assignment is complete. 
         """
-        raise NotImplementedError()
+        return self.firstEpsilonVariable() == None
 
     def variableDomain(self, r, c):
         """
         IMPLEMENT FOR PART 1
         Returns current domain for the (row, col) variable .
         """
-        raise NotImplementedError()
+        rowFactor = self.factorRemaining[(ROW, r)] if (ROW, r) in self.factorRemaining else range(1, 10)
+        colFactor = self.factorRemaining[(COL, c)] if (COL, c) in self.factorRemaining else range(1, 10)
+        boxFactor = self.factorRemaining[(BOX, self.box_id(r,c))] if (BOX, self.box_id(r,c)) in self.factorRemaining else range(1, 10)
+        values = set(range(1,10))
+        for i in range(0,9):
+            if not (rowFactor[i] and colFactor[i] and boxFactor[i]):
+                values.remove(i+1)
+        return values
 
     # PART 2
     def updateFactor(self, factor_type, i):
@@ -105,14 +116,17 @@ class Sudoku:
         `factor_type` is one of BOX, ROW, COL 
         `i` is an index between 0 and 8.
         """
-        raise NotImplementedError()
-        # values = []
-        # if factor_type == BOX:
-            
-        # if factor_type == ROW:
-            
-        # if factor_type == COL:
-            
+        values = range(1,10)
+        taken_values = []
+        if factor_type == BOX:
+            taken_values = self.box(i)
+        if factor_type == ROW:
+            taken_values = self.row(i)
+        if factor_type == COL:
+            taken_values = self.col(i)
+        conflicts = crossOff(values, taken_values)
+        self.factorRemaining[(factor_type, i)] = values
+        self.factorNumConflicts[(factor_type, i)] = conflicts
         
     def updateAllFactors(self):
         """
@@ -120,14 +134,20 @@ class Sudoku:
         Update the values remaining for all factors.
         There is one factor for each row, column, and box.
         """
-        raise NotImplementedError()
+        for i in range(0,9):
+            self.updateFactor(BOX, i)
+            self.updateFactor(ROW, i)
+            self.updateFactor(COL, i)
 
     def updateVariableFactors(self, variable):
         """
         IMPLEMENT FOR PART 2
         Update all the factors impacting a variable (neighbors in factor graph).
         """
-        raise NotImplementedError()
+        r,c = variable
+        self.updateFactor(ROW, r)
+        self.updateFactor(COL, c)
+        self.updateFactor(BOX, self.box_id(r,c))
 
     # CSP SEARCH CODE
     def nextVariable(self):
@@ -146,7 +166,15 @@ class Sudoku:
         Returns new assignments with each possible value 
         assigned to the variable returned by `nextVariable`.
         """
-        raise NotImplementedError()
+        var = self.nextVariable()
+        successorBoards = []
+        if var is not None:
+            r,c = var
+            self.updateVariableFactors((r,c))
+            values = self.variableDomain(r,c)
+            for val in values:
+                successorBoards.append(self.setVariable(r, c, val))
+        return successorBoards
 
     def getAllSuccessors(self):
         if not args.forward: 
@@ -163,7 +191,13 @@ class Sudoku:
         IMPLEMENT IN PART 4
         Returns true if all variables have non-empty domains.
         """
-        raise NotImplementedError()
+        self.updateAllFactors()
+        for row in range(len(self.board)):
+            for col in range(len(self.board[row])):
+                if self.board[row][col] == 0:
+                    if len(self.variableDomain(row,col)) == 0:
+                        return False
+        return True
 
     # PART 5
     def mostConstrainedVariable(self):
