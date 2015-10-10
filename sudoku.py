@@ -166,11 +166,11 @@ class Sudoku:
         Returns new assignments with each possible value 
         assigned to the variable returned by `nextVariable`.
         """
+        self.updateAllFactors()
         var = self.nextVariable()
         successorBoards = []
         if var is not None:
             r,c = var
-            self.updateVariableFactors((r,c))
             values = self.variableDomain(r,c)
             for val in values:
                 successorBoards.append(self.setVariable(r, c, val))
@@ -205,7 +205,16 @@ class Sudoku:
         IMPLEMENT IN PART 5
         Returns the most constrained unassigned variable.
         """
-        raise NotImplementedError()
+        min_var = None
+        min_domain = None
+        for row in range(len(self.board)):
+            for col in range(len(self.board[row])):
+                if self.board[row][col] == 0:
+                    domain = len(self.variableDomain(row,col))
+                    if domain < min_domain or min_var is None:
+                        min_domain = domain
+                        min_var = (row, col)
+        return min_var
 
     # LOCAL SEARCH CODE
     # Fixed variables cannot be changed by the player.
