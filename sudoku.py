@@ -282,7 +282,7 @@ class Sudoku:
         """
         row = random.randint(0,8)
         col_values = []
-        for col in range(0, 8):
+        for col in range(0, 9):
             if (row, col) not in self.fixedVariables or not self.fixedVariables[row,col]:
                 col_values.append(col)
         c1, c2 = random.sample(col_values, 2)
@@ -297,7 +297,7 @@ class Sudoku:
         """
         conflicts = self.numConflicts()
         self.modifySwap(variable1, variable2)
-        if self.numConflicts() > conflicts and random.random() > 0.001:
+        if self.numConflicts() >= conflicts and random.random() > 0.001:
             self.modifySwap(variable1, variable2)
         
     ### IGNORE - PRINTING CODE
@@ -487,8 +487,9 @@ def solveCSP(problem):
 def solveLocal(problem):
     for r in range(1):
         problem.randomRestart()  
-        print "Conflicts initially:" + str(problem.numConflicts())
         state = problem
+        print "Conflicts initially:" + str(state.numConflicts())
+        print state
         for i in range(100000):
             originalConflicts = state.numConflicts()
 
@@ -514,8 +515,12 @@ def solveLocal(problem):
                 os.system("clear")
                 print state
                 raw_input("Press Enter to continue...") 
-    print "Conflicts remaining:" + str(problem.numConflicts())
     
+        print "Conflicts remaining:" + str(state.numConflicts())
+        print state
+        for key in state.factorNumConflicts:
+            if key[0] == BOX and state.factorNumConflicts[key] > 0:
+                print "{}:{}".format(key[1], state.factorNumConflicts[key])
                 
 
 boardHard = [[0,0,0,0,0,8,9,0,2],
