@@ -260,11 +260,11 @@ class Sudoku:
         with all the row factors being held consistent. 
         Should call `updateAllFactors` at end.
         """
-        for row in range(0, 9):
+        for row in range(len(self.board)):
             self.updateFactor(ROW, row)
             values = self.factorRemaining[(ROW, row)]
             random.shuffle(values)
-            for col in range(0, 9):
+            for col in range(len(self.board[row])):
                 if self.board[row][col] == 0:
                     while values[0] is None:
                         values = values[1:]
@@ -280,9 +280,9 @@ class Sudoku:
         Returns two random variables that can be swapped without
         causing a row factor conflict.
         """
-        row = random.randint(0,8)
+        row = random.randint(0,len(self.board)-1)
         col_values = []
-        for col in range(0, 9):
+        for col in range(len(self.board[row])):
             if (row, col) not in self.fixedVariables or not self.fixedVariables[row,col]:
                 col_values.append(col)
         c1, c2 = random.sample(col_values, 2)
@@ -298,6 +298,7 @@ class Sudoku:
         conflicts = self.numConflicts()
         self.modifySwap(variable1, variable2)
         if self.numConflicts() >= conflicts and random.random() > 0.001:
+            #undo swap since conflicts increased
             self.modifySwap(variable1, variable2)
         
     ### IGNORE - PRINTING CODE
@@ -492,7 +493,8 @@ def solveLocal(problem):
         print state
         for i in range(100000):
             originalConflicts = state.numConflicts()
-
+            if i % 1000 == 0:
+                print "Iteration {}: {}".format(i, originalConflicts)
             v1, v2 = state.randomSwap()        
 
             state.gradientDescent(v1, v2)
