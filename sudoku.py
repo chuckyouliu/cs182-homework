@@ -171,6 +171,8 @@ class Sudoku:
         successorBoards = []
         if var is not None:
             r,c = var
+            #need to have an updateAllFactors call at top for mostConstrainedVariable
+            #self.updateVariableFactors((r,c))
             values = self.variableDomain(r,c)
             for val in values:
                 successorBoards.append(self.setVariable(r, c, val))
@@ -258,8 +260,18 @@ class Sudoku:
         with all the row factors being held consistent. 
         Should call `updateAllFactors` at end.
         """
-        raise NotImplementedError()
-        # self.updateAllFactors()
+        for row in range(0, 9):
+            self.updateFactor(ROW, row)
+            values = self.factorRemaining[(ROW, row)]
+            random.shuffle(values)
+            for col in range(0, 9):
+                if self.board[row][col] == 0:
+                    while values[0] is None:
+                        values = values[1:]
+                    self.board[row][col] = values[0]
+                    values = values[1:]
+            
+        self.updateAllFactors()
     
     # PART 7
     def randomSwap(self):
@@ -268,7 +280,13 @@ class Sudoku:
         Returns two random variables that can be swapped without
         causing a row factor conflict.
         """
-        raise NotImplementedError()
+        row = random.randint(0,8)
+        col_values = []
+        for col in range(0, 8):
+            if (row, col) not in self.fixedVariables or not self.fixedVariables[row,col]:
+                col_values.append(col)
+        c1, c2 = random.sample(col_values, 2)
+        return ((row, c1), (row, c2))
       
 
     # PART 8
@@ -277,8 +295,10 @@ class Sudoku:
         IMPLEMENT FOR PART 8
         Decide if we should swap the values of variable1 and variable2.
         """
-        raise NotImplementedError()
-
+        conflicts = self.numConflicts()
+        self.modifySwap(variable1, variable2)
+        if self.numConflicts() > conflicts and random.random() > 0.001:
+            self.modifySwap(variable1, variable2)
         
     ### IGNORE - PRINTING CODE
         
@@ -467,6 +487,7 @@ def solveCSP(problem):
 def solveLocal(problem):
     for r in range(1):
         problem.randomRestart()  
+        print "Conflicts initially:" + str(problem.numConflicts())
         state = problem
         for i in range(100000):
             originalConflicts = state.numConflicts()
@@ -492,7 +513,8 @@ def solveLocal(problem):
             if args.debug:
                 os.system("clear")
                 print state
-                raw_input("Press Enter to continue...")            
+                raw_input("Press Enter to continue...") 
+    print "Conflicts remaining:" + str(problem.numConflicts())
     
                 
 
