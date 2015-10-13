@@ -297,7 +297,7 @@ class Sudoku:
         """
         conflicts = self.numConflicts()
         self.modifySwap(variable1, variable2)
-        if self.numConflicts() >= conflicts and random.random() > 0.001:
+        if self.numConflicts() > conflicts and random.random() > 0.001:
             #undo swap since conflicts increased
             self.modifySwap(variable1, variable2)
         
