@@ -1,3 +1,3 @@
 # cs182-homework
 
-Keep a repository of all Artificial Intelligence homeworks
+Keep a repository of all Artificial Intelligence homeworks in different branches
